@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>云购生活 · 经营数据大屏</title>
+<script src="/static/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #050b1a; }
+  #stage { width: 1920px; height: 1080px; transform-origin: left top; position: absolute;
+           background: radial-gradient(circle at 50% 0%, #12224a 0%, #050b1a 60%); }
+  .header { height: 90px; display: flex; align-items: center; justify-content: center;
+            position: relative; border-bottom: 1px solid rgba(64,158,255,.25); }
+  .header h1 { font-size: 38px; letter-spacing: 6px; font-weight: 700;
+               background: linear-gradient(180deg,#a8d8ff,#3d9bff);
+               -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .time { position: absolute; right: 40px; color: #7fa8d8; font-size: 16px; }
+  .kpis { display: flex; gap: 24px; padding: 22px 40px 10px; }
+  .kpi { flex: 1; background: linear-gradient(135deg, rgba(29,73,140,.55), rgba(13,32,66,.55));
+         border: 1px solid rgba(64,158,255,.3); border-radius: 10px; padding: 16px 22px; }
+  .kpi .label { color: #8fb6e0; font-size: 15px; letter-spacing: 1px; }
+  .kpi .value { color: #4fd2ff; font-size: 40px; font-weight: 700; margin-top: 6px;
+                font-family: Consolas, monospace; }
+  .kpi .unit { color: #6f92bb; font-size: 15px; margin-left: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 300px 320px;
+          gap: 18px; padding: 6px 40px 24px; }
+  .panel { background: rgba(10,26,54,.62); border: 1px solid rgba(64,158,255,.22);
+           border-radius: 10px; position: relative; }
+  .panel .title { position: absolute; top: 10px; left: 18px; color: #a9cdf5; font-size: 17px;
+                  font-weight: 600; letter-spacing: 1px; z-index: 2; }
+  .panel .title::before { content: ''; display: inline-block; width: 4px; height: 15px;
+                          background: #3d9bff; margin-right: 8px; vertical-align: -2px; border-radius: 2px; }
+  .chart { width: 100%; height: 100%; }
+  .footer { position: absolute; bottom: 8px; width: 100%; text-align: center;
+            color: #4a6d99; font-size: 13px; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="header">
+    <h1>云购生活 · 经营数据大屏</h1>
+    <div class="time" id="clock"></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="panel"><div class="title">GMV 趋势（近 90 天）</div><div class="chart" id="c_trend"></div></div>
+    <div class="panel"><div class="title">品类销售额（万元）</div><div class="chart" id="c_category"></div></div>
+    <div class="panel"><div class="title">渠道 GMV 占比</div><div class="chart" id="c_channel"></div></div>
+    <div class="panel"><div class="title">省份销售分布（万元）</div><div class="chart" id="c_map"></div></div>
+    <div class="panel"><div class="title">门店 GMV 与订单量（散点）</div><div class="chart" id="c_store"></div></div>
+    <div class="panel"><div class="title">品类 × 月份 热力（万元）</div><div class="chart" id="c_heat"></div></div>
+  </div>
+
+  <div class="footer">数据来源：Hive 数仓 ydsh_ads → MySQL BI 集市　|　云仓五号</div>
+</div>
+
+<script>
+// ---------- 自适应：整体 scale ----------
+const DESIGN_W = 1920, DESIGN_H = 1080;
+function fit() {
+  const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
+  const stage = document.getElementById('stage');
+  stage.style.transform = `scale(${s})`;
+  stage.style.left = (window.innerWidth - DESIGN_W * s) / 2 + 'px';
+  stage.style.top = (window.innerHeight - DESIGN_H * s) / 2 + 'px';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ---------- 时钟 ----------
+function tick() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  document.getElementById('clock').textContent =
+    `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+setInterval(tick, 1000); tick();
+
+const AXIS = {
+  axisLine: { lineStyle: { color: 'rgba(120,170,230,.35)' } },
+  axisLabel: { color: '#8fb6e0', fontSize: 12 },
+  splitLine: { lineStyle: { color: 'rgba(120,170,230,.12)' } }
+};
+const charts = {};
+function init(id) { charts[id] = echarts.init(document.getElementById(id)); return charts[id]; }
+window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
+
+// ---------- KPI ----------
+function fmt(v, name) {
+  if (name === 'GMV') return (v / 10000).toFixed(0) + '万';
+  if (name === '复购率') return v.toFixed(0) + '%';
+  if (name === '客单价 AOV') return v.toFixed(0);
+  return v.toLocaleString();
+}
+async function loadKPI() {
+  const data = await fetch('/api/kpi').then(r => r.json());
+  document.getElementById('kpis').innerHTML = data.slice(0, 4).map(k => `
+    <div class="kpi">
+      <div class="label">${k.name}</div>
+      <div class="value">${fmt(k.value, k.name)}<span class="unit">${k.unit}</span></div>
+    </div>`).join('');
+}
+
+// ---------- 趋势 ----------
+async function loadTrend() {
+  const d = await fetch('/api/trend').then(r => r.json());
+  const c = init('c_trend');
+  c.setOption({
+    grid: { left: 58, right: 24, top: 52, bottom: 34 },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: d.map(x => x.date), ...AXIS, axisLabel: { ...AXIS.axisLabel, interval: 14 } },
+    yAxis: { type: 'value', name: '元', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    series: [
+      { name: 'GMV', type: 'line', smooth: true, showSymbol: false, data: d.map(x => x.gmv),
+        lineStyle: { width: 2, color: '#4fd2ff' },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1,
+          [{ offset: 0, color: 'rgba(79,210,255,.45)' }, { offset: 1, color: 'rgba(79,210,255,0)' }]) } },
+      { name: '7日均线', type: 'line', smooth: true, showSymbol: false, data: d.map(x => x.ma7),
+        lineStyle: { width: 2, color: '#ffb74d', type: 'dashed' } }
+    ],
+    legend: { right: 20, top: 8, textStyle: { color: '#9fc4ea' }, itemWidth: 14, itemHeight: 8 }
+  });
+}
+
+// ---------- 品类 ----------
+async function loadCategory() {
+  const d = await fetch('/api/category').then(r => r.json());
+  const c = init('c_category');
+  c.setOption({
+    grid: { left: 58, right: 24, top: 52, bottom: 46 },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'category', data: d.map(x => x.name), ...AXIS,
+             axisLabel: { ...AXIS.axisLabel, interval: 0, rotate: 20 } },
+    yAxis: { type: 'value', name: '万元', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    series: [{ type: 'bar', data: d.map(x => x.sales), barWidth: '46%',
+      itemStyle: { borderRadius: [4, 4, 0, 0],
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1,
+          [{ offset: 0, color: '#4fd2ff' }, { offset: 1, color: '#1b5fbf' }]) },
+      label: { show: true, position: 'top', color: '#9fc4ea', fontSize: 11 } }]
+  });
+}
+
+// ---------- 渠道 ----------
+async function loadChannel() {
+  const d = await fetch('/api/channel').then(r => r.json());
+  const c = init('c_channel');
+  c.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}<br/>{c} 万元 ({d}%)' },
+    legend: { bottom: 6, textStyle: { color: '#9fc4ea' }, itemWidth: 12, itemHeight: 8 },
+    series: [{ type: 'pie', radius: ['42%', '66%'], center: ['50%', '48%'],
+      itemStyle: { borderColor: '#08152e', borderWidth: 2 },
+      label: { color: '#cfe4ff', formatter: '{b}\n{d}%' },
+      data: d.map(x => ({ name: x.name, value: x.value })) }],
+    color: ['#4fd2ff', '#7c6cff', '#ffb74d', '#33d69f']
+  });
+}
+
+// ---------- 地图 ----------
+function normProvince(n) {
+  return n.replace(/(省|市|自治区|壮族|回族|维吾尔|特别行政区)/g, '') || n;
+}
+async function loadMap() {
+  const geo = await fetch('/static/china.json').then(r => r.json());
+  echarts.registerMap('china', geo);
+  const d = await fetch('/api/province').then(r => r.json());
+  const max = Math.max(...d.map(x => x.value));
+  const c = init('c_map');
+  c.setOption({
+    tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value || 0} 万元` },
+    visualMap: { min: 0, max: max, left: 16, bottom: 16, text: ['高', '低'],
+                 textStyle: { color: '#9fc4ea' }, inRange: { color: ['#0d2b52', '#1b6fb8', '#4fd2ff'] },
+                 calculable: true, itemWidth: 10, itemHeight: 70 },
+    series: [{ type: 'map', map: 'china', roam: false, zoom: 1.18,
+      itemStyle: { borderColor: 'rgba(120,190,255,.35)', areaColor: '#0d2344' },
+      emphasis: { itemStyle: { areaColor: '#ffb74d' }, label: { color: '#fff' } },
+      label: { show: false },
+      data: d.map(x => ({ name: normProvince(x.name), value: x.value })) }]
+  });
+}
+
+// ---------- 门店散点 ----------
+async function loadStore() {
+  const d = await fetch('/api/store').then(r => r.json());
+  const c = init('c_store');
+  c.setOption({
+    grid: { left: 62, right: 28, top: 52, bottom: 42 },
+    tooltip: { formatter: p => `${p.data[2]}<br/>GMV ${p.data[0]} 万<br/>订单 ${p.data[1]} 笔` },
+    xAxis: { type: 'value', name: 'GMV（万元）', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    yAxis: { type: 'value', name: '订单量', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    series: [{ type: 'scatter', symbolSize: 12,
+      itemStyle: { color: 'rgba(79,210,255,.75)', borderColor: '#4fd2ff' },
+      data: d.map(x => [x.gmv, x.orders, x.name]) }]
+  });
+}
+
+// ---------- 热力图 ----------
+async function loadHeat() {
+  const h = await fetch('/api/heatmap').then(r => r.json());
+  const c = init('c_heat');
+  c.setOption({
+    grid: { left: 86, right: 24, top: 52, bottom: 62 },
+    tooltip: { formatter: p => `${h.categories[p.data[1]]} / ${h.months[p.data[0]]}<br/>${p.data[2]} 万元` },
+    xAxis: { type: 'category', data: h.months, splitArea: { show: true }, ...AXIS,
+             axisLabel: { ...AXIS.axisLabel, rotate: 40, fontSize: 11 } },
+    yAxis: { type: 'category', data: h.categories, splitArea: { show: true }, ...AXIS },
+    visualMap: { min: 0, max: h.max, orient: 'horizontal', left: 'center', bottom: 4,
+                 textStyle: { color: '#9fc4ea' }, inRange: { color: ['#0d2b52', '#1b6fb8', '#4fd2ff', '#ffb74d'] },
+                 itemWidth: 12, itemHeight: 90, calculable: true },
+    series: [{ type: 'heatmap', data: h.data,
+      itemStyle: { borderColor: '#08152e', borderWidth: 1 },
+      emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,.5)' } } }]
+  });
+}
+
+// ---------- 启动 ----------
+(async function () {
+  await Promise.all([loadKPI(), loadTrend(), loadCategory(), loadChannel(), loadMap(), loadStore(), loadHeat()]);
+  setTimeout(() => Object.values(charts).forEach(c => c.resize()), 300);
+})();
+</script>
+</body>
+</html>
