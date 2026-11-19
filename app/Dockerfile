@@ -1,6 +1,7 @@
 # 第 4 周：Streamlit 问答应用镜像
-# nl2sql 通过 `docker exec beeline` 查询 Hive，因此容器内需要 docker CLI，
-# 并挂载宿主的 /var/run/docker.sock（见 docker-compose.yml）
+# nl2sql 通过 `docker exec beeline` 查询 Hive：
+#   - 镜像内放置 docker CLI 静态二进制（Debian 的 docker.io 包不含 CLI）
+#   - 运行时挂载宿主 /var/run/docker.sock（见 docker-compose.yml）
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -8,10 +9,9 @@ ENV PYTHONUNBUFFERED=1 \
     TZ=Asia/Shanghai \
     DEBIAN_FRONTEND=noninteractive
 
-# 用 Debian 主源安装 docker.io（含 CLI），避免访问 download.docker.com
-RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true; \
-    apt-get update && apt-get install -y --no-install-recommends docker.io \
-    && rm -rf /var/lib/apt/lists/*
+# 静态 docker CLI（从清华镜像下载的 docker-27.3.1 中提取）
+COPY bin/docker /usr/local/bin/docker
+RUN chmod +x /usr/local/bin/docker && docker --version
 
 WORKDIR /repo
 RUN pip install --no-cache-dir streamlit pandas pymysql

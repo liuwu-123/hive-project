@@ -22,8 +22,8 @@
   .kpi .value { color: #4fd2ff; font-size: 40px; font-weight: 700; margin-top: 6px;
                 font-family: Consolas, monospace; }
   .kpi .unit { color: #6f92bb; font-size: 15px; margin-left: 6px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 300px 320px;
-          gap: 18px; padding: 6px 40px 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 352px 400px;
+          gap: 18px; padding: 8px 40px 16px; }
   .panel { background: rgba(10,26,54,.62); border: 1px solid rgba(64,158,255,.22);
            border-radius: 10px; position: relative; }
   .panel .title { position: absolute; top: 10px; left: 18px; color: #a9cdf5; font-size: 17px;
@@ -187,8 +187,8 @@ async function loadStore() {
   c.setOption({
     grid: { left: 62, right: 28, top: 52, bottom: 42 },
     tooltip: { formatter: p => `${p.data[2]}<br/>GMV ${p.data[0]} 万<br/>订单 ${p.data[1]} 笔` },
-    xAxis: { type: 'value', name: 'GMV（万元）', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
-    yAxis: { type: 'value', name: '订单量', nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    xAxis: { type: 'value', name: 'GMV(万)', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
+    yAxis: { type: 'value', name: '单量', nameLocation: 'middle', nameGap: 40, nameTextStyle: { color: '#7fa8d8' }, ...AXIS },
     series: [{ type: 'scatter', symbolSize: 12,
       itemStyle: { color: 'rgba(79,210,255,.75)', borderColor: '#4fd2ff' },
       data: d.map(x => [x.gmv, x.orders, x.name]) }]
@@ -200,12 +200,12 @@ async function loadHeat() {
   const h = await fetch('/api/heatmap').then(r => r.json());
   const c = init('c_heat');
   c.setOption({
-    grid: { left: 86, right: 24, top: 52, bottom: 62 },
+    grid: { left: 86, right: 96, top: 52, bottom: 58 },
     tooltip: { formatter: p => `${h.categories[p.data[1]]} / ${h.months[p.data[0]]}<br/>${p.data[2]} 万元` },
     xAxis: { type: 'category', data: h.months, splitArea: { show: true }, ...AXIS,
              axisLabel: { ...AXIS.axisLabel, rotate: 40, fontSize: 11 } },
     yAxis: { type: 'category', data: h.categories, splitArea: { show: true }, ...AXIS },
-    visualMap: { min: 0, max: h.max, orient: 'horizontal', left: 'center', bottom: 4,
+    visualMap: { min: 0, max: h.max, orient: 'vertical', right: 14, top: 'middle',
                  textStyle: { color: '#9fc4ea' }, inRange: { color: ['#0d2b52', '#1b6fb8', '#4fd2ff', '#ffb74d'] },
                  itemWidth: 12, itemHeight: 90, calculable: true },
     series: [{ type: 'heatmap', data: h.data,

@@ -98,6 +98,15 @@ def ask(q):
 
 
 # ---------------- 处理提问 ----------------
+# 支持链接直达：?q=问题内容（便于分享与截图演示）
+_qp = st.query_params.get("q")
+if isinstance(_qp, list):
+    _qp = _qp[0] if _qp else None
+if _qp and submitted is False:
+    question = _qp
+    submitted = True
+    st.query_params.clear()
+
 if submitted and question:
     result = ask(question)
     st.session_state.history.insert(0, result)
