@@ -1,140 +1,204 @@
-# 云购生活新零售企业 —— 企业级数据仓库与经营分析可视化系统
+# Yundu Life — Enterprise Data Warehouse & Analytics System
 
-> 课程：企业项目实战实训　阶段：第 1 周（项目启动 · 环境搭建 · Git 基础 · 数据导入 · 数据清洗一）
+An end-to-end data platform for a fictional new-retail company: from raw CSV ingestion to a four-layer Hive data warehouse, time-series forecasting, natural-language-to-SQL (NL2SQL) querying, interactive dashboards and one-command deployment.
 
-## 一、团队信息
+> Course project · Team **Cloud Warehouse No.5** · 5-week delivery cycle
+> Chinese documentation: [README.zh-CN.md](README.zh-CN.md)
 
-| 项目 | 内容 |
+---
+
+## Highlights
+
+| Metric | Value |
 |---|---|
-| 队名 | 云仓五号 |
-| 成员 | 刘祎炫、张业彬、闫洪伟、柴传兴、邓克超 |
-| 口号 | 把脏数据洗成决策 |
+| Raw data ingested | **114,809 rows** across 6 business tables |
+| Data quality issues fixed | **16 metrics, 14 at 100% repair rate** |
+| Warehouse layers | ODS → DWD → DWS → ADS (7 dimension + 3 fact tables) |
+| Core KPI | GMV **¥36,116,687.06**, 14,398 orders, AOV **¥2,508.45** |
+| NL2SQL accuracy | **10/10** test questions, ~5.9 s average end-to-end |
+| End-to-end rebuild | **3.2 minutes** from CSV to a BI-ready MySQL mart |
+| Services orchestrated | **6 containers** with health checks |
 
-## 二、角色分工
+---
 
-| 角色 | 姓名 | 主要职责 |
-|---|---|---|
-| 项目经理 | 刘祎炫 | 进度把控、任务拆分、文档汇总、答辩组织、Git 仓库维护 |
-| 数据工程师 A（环境） | 张业彬 | Docker / Hive / MySQL 环境搭建、容器排障、一键恢复脚本 |
-| 数据工程师 B（数据） | 闫洪伟 | ODS 层 6 张表建表、数据导入、行数校验 |
-| 数据分析师 | 柴传兴 | 数据质量五维度评估、缺失值填充、订单去重、指标口径 |
-| 可视化工程师 | 邓克超 | 数据探索、图表设计、看板与可视化（第 3～4 周开展） |
-
-> 说明：本组共 5 人，按清单的 4 个角色拆分，其中「数据工程师」由两人分别承担环境与数据两条线。
-
-## 三、项目目标
-
-基于「云购生活」新零售业务数据，构建 **ODS → DWD → DWS → ADS** 四层数据仓库，并在其上完成经营分析可视化系统，形成「接数据 → 查质量 → 做清洗 → 出指标 → 上可视化」的完整闭环。
-
-## 四、阶段计划
-
-| 周次 | 主题 | 关键产出 |
-|---|---|---|
-| 第 1 周 | 环境搭建 / 数据导入 / 清洗（一） | Docker+Hive 环境、ODS 6 表、质量预评估表、缺失值与去重脚本 |
-| 第 2 周 | 清洗进阶 / 数仓建模 / 探索分析 | DWD 明细层建模、DWS 汇总层、探索性分析 |
-| 第 3 周 | 分析 / 预测 / AI 协同 | 经营指标分析、简单预测模型、AI 协同记录 |
-| 第 4 周 | 可视化 / 部署 | 看板与图表、系统部署 |
-| 第 5 周 | 整合 / 文档 / 答辩 | 项目文档、答辩材料 |
-
-## 五、技术栈
-
-| 层次 | 技术 |
-|---|---|
-| 容器与编排 | Docker Desktop（WSL2 backend）、Docker Compose v2 |
-| 数据存储 | Hive 4.0.0（Metastore + HiveServer2）、MySQL 8.0 |
-| 查询引擎 | Hive SQL（Tez 执行引擎） |
-| 数据处理 | Hive SQL：建表 / LOAD DATA / 窗口函数 / CTAS |
-| 版本管理 | Git + GitHub（SSH over 443） |
-| 文档与交付 | Markdown、Excel（openpyxl） |
-
-## 六、数据说明
-
-`模拟数据/` 下共 6 个 CSV（UTF-8，逗号分隔，含表头），已通过 `.gitignore` 排除，不纳入版本库：
-
-| 表名 | 业务含义 | 行数 |
-|---|---|---|
-| ods_user | 用户维度 | 1000 |
-| ods_product | 商品维度 | 600 |
-| ods_store | 门店维度 | 60 |
-| ods_order | 订单事实 | 15600 |
-| ods_order_item | 订单明细 | 37549 |
-| ods_user_behavior | 用户行为 | 60000 |
-
-## 七、目录结构
+## Architecture
 
 ```
-hive-project/
-├── docker-compose.yml          # Hive + MySQL 编排
-├── README.md
-├── .gitignore                  # 排除数据、密钥、日志
-├── sql/
-│   ├── ods/
-│   │   ├── create_ods.sql      # 建库 + 6 张表
-│   │   ├── load_ods.sql        # 6 个 CSV 导入
-│   │   ├── 01~06_create_*.sql  # 分表建表脚本
-│   │   ├── 91_count_check.sql  # 行数校验
-│   │   ├── 92_quality_check.sql# 五维度扫描
-│   │   └── 93_spot_check.sql   # 关键指标抽查
-│   └── clean/
-│       ├── 01_clean_user.sql   # age 均值填充 + email 缺失标记
-│       ├── 02_clean_product.sql# 上架日期补全
-│       ├── 03_dedup_order.sql  # ROW_NUMBER 去重
-│       └── 90_clean_check.sql  # 清洗结果校验
-├── scripts/
-│   └── rebuild_all.ps1         # 环境一键恢复
-├── docs/
-│   ├── 环境搭建笔记.md
-│   ├── 数据质量预评估表.xlsx
-│   └── screenshots/
-└── 模拟数据/                    # 6 个 CSV（不入库）
+┌─────────────┐   ┌──────────────┐   ┌─────────────┐   ┌──────────────┐
+│     ODS     │──▶│     DWD      │──▶│     DWS     │──▶│     ADS      │
+│ raw import  │   │ clean + star │   │ aggregated  │   │ KPI / top-N  │
+│  6 tables   │   │ 7 dim + 3 fact│  │  5 tables   │   │  5 tables    │
+└─────────────┘   └──────────────┘   └─────────────┘   └──────┬───────┘
+                                                              │ sync
+        ┌─────────────────────────────────────────────────────┘
+        ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│ MySQL mart   │──▶│  Superset    │   │   ECharts    │   │  Streamlit   │
+│  (BI mart)   │   │  dashboard   │   │  big screen  │   │  NL2SQL chat │
+└──────────────┘   └──────────────┘   └──────────────┘   └──────────────┘
+                                          ▲
+                       ┌──────────────────┴──────────────────┐
+                       │ Forecasting (scikit-learn) ·        │
+                       │ AI insight (DeepSeek API)           │
+                       └─────────────────────────────────────┘
 ```
 
-## 八、环境启动与验证
+**Why a MySQL mart?**
+Superset cannot reach Hive without `pyhive + thrift + sasl`, and `sasl` needs a C toolchain that often fails inside containers. Hive therefore stays the compute layer, while aggregated results are synced into MySQL for the BI layer — mirroring how production systems separate compute from serving.
 
-```powershell
-# 1. 启动三容器
+---
+
+## Features
+
+### Data engineering
+- 6 raw CSVs → Hive tables (header skipped, comma-separated, ORC storage)
+- Two-stage enum normalisation: `map_*` lookup tables → `dim_*` dimensions (7 mapping sets)
+- Anomaly handling: negative amounts, extreme values (>¥100k), malformed dates and phone numbers
+- Star schema: `dim_user / dim_product / dim_store / dim_date` plus `fact_order / fact_order_item / fact_behavior`
+- Monthly partitioning (12 partitions) and bucketing (8 buckets on `order_id`)
+
+### Analytics & ML
+- DWS aggregates by day / month × store / channel / category
+- ADS KPI layer: GMV, orders, AOV, active users, repurchase, user value tiers
+- Time-series diagnosis (ACF, trend, weekday effect) followed by forecasting; the random forest reaches **MAPE 11.87% against an 11.93% mean baseline**, and the report states plainly that the series behaves like white noise
+- AI insight: programmatic z-score anomaly detection feeds an LLM that may only cite facts supplied to it
+
+### AI / NL2SQL
+- Automatic Hive schema extraction (16 tables) injected into the prompt
+- Guarded execution: `SELECT`-only whitelist, `ydsh_*` prefix check, one automatic retry that feeds the error back to the model
+- CLI: `python -m nl2sql.main "2024 年 6 月 GMV 最高的前 3 家门店"`
+- Web: Streamlit chat showing generated SQL, result table and an auto-selected chart
+
+### Visualisation & deployment
+- **Superset** dashboard: trend, category, payment pie, store top-10, monthly and province charts
+- **ECharts** 1920×1080 big screen with `transform: scale()` responsive layout, China map, heatmap and scatter
+- **Docker Compose**: 6 services, health checks, secrets injected through `.env`
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/liuwu-123/hive-project.git
+cd hive-project
+
+# 1. secrets (never commit this file)
+cat > .env <<'EOF'
+DEEPSEEK_API_KEY=sk-xxxxxxxx
+SUPERSET_SECRET_KEY=<40 random characters>
+EOF
+
+# 2. start all services
 docker compose up -d
-docker compose ps                     # 期望 mysql / metastore / hive-server 均 Up
+docker compose ps
 
-# 2. 导入 ODS 层
-docker exec -u root hive-project-hive-server-1 mkdir -p /sql /data
-docker cp "模拟数据\." hive-project-hive-server-1:/data/
-docker cp ".\sql\."  hive-project-hive-server-1:/sql/
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/ods/create_ods.sql
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/ods/load_ods.sql
+# 3. first-run initialisation (once)
+docker exec hive-project-superset-1 superset db upgrade
+docker exec hive-project-superset-1 superset fab create-admin \
+  --username admin --firstname Admin --lastname User \
+  --email admin@example.com --password admin123
+docker exec hive-project-superset-1 superset init
 
-# 3. 行数校验（6 行全 OK 即通过）
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/ods/91_count_check.sql
-
-# 4. 清洗
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/clean/01_clean_user.sql
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/clean/02_clean_product.sql
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/clean/03_dedup_order.sql
-
-# 5. 清洗结果校验
-docker exec hive-project-hive-server-1 beeline -u "jdbc:hive2://localhost:10000/" -f /sql/clean/90_clean_check.sql
+# 4. rebuild the warehouse from raw CSV (≈3 minutes)
+powershell -ExecutionPolicy Bypass -File scripts/rebuild_end2end.ps1
 ```
 
-## 九、当前进度（第 1 周）
+| Service | URL | Credential |
+|---|---|---|
+| Superset dashboard | http://localhost:8088 | admin / admin123 |
+| ECharts big screen | http://localhost:5000 | — |
+| Streamlit NL2SQL chat | http://localhost:8501 | — |
+| HiveServer2 (JDBC) | `jdbc:hive2://localhost:10000/` | — |
+| MySQL mart | `localhost:3306` | root / root |
 
-| 交付物 | 状态 |
+---
+
+## Tech stack
+
+| Layer | Technology |
 |---|---|
-| Docker / Hive / MySQL 环境可运行 | ✅ 三容器 Up，beeline 可连 |
-| ODS 层 6 张表 + 数据导入 | ✅ 行数校验全 OK |
-| 数据质量五维度预评估 | ✅ `docs/数据质量预评估表.xlsx` |
-| 缺失值处理 | ✅ `age` 均值填充、`email` 与 `launch_date` 标记/补全 |
-| 重复值去重 | ✅ `ods_order` 15600 → `dwd_order` 15000 |
-| Git 仓库与规范提交 | ✅ 提交信息遵循 `feat:` / `fix:` / `docs:` / `chore:` |
+| Storage & compute | Apache Hive 4.0.0, Tez, HDFS (container), ORC |
+| Metadata | MySQL 8.0 |
+| BI mart | MySQL 8.0 (`ydsh_ads`) |
+| Analytics / ML | Python 3.12, pandas, scikit-learn, matplotlib |
+| LLM integration | DeepSeek Chat API (OpenAI-compatible) with a hand-written JSON guard |
+| Visualisation | Apache Superset 3.1, ECharts 5.5, Streamlit |
+| Orchestration | Docker Compose v2, PowerShell automation |
 
-## 十、第 3 周计划
+---
 
-1. **DWS / ADS 与 KPI**：建 `ydsh_dws`、`ydsh_ads` 两个库，产出 5 张汇总表 + 5 张应用表，
-   计算 GMV、订单量、客单价、复购率等核心指标，
-   脚本在 `sql/dws/`、`sql/ads/`，指标结果见 `docs/第3周_KPI指标结果表.xlsx`
-2. **时间序列预测**：基于日粒度 GMV 做趋势分解与未来 7 天预测，评估 MAE / MAPE 并说明模型适用边界，
-   脚本 `analysis/forecast_gmv.py`，报告 `docs/预测建模分析报告.docx`
-3. **NL2SQL**：自然语言转 Hive SQL（Schema 抽取 + Prompt 约束 + 执行校验），
-   代码在 `nl2sql/`，10 题测试全部通过
-4. **AI 智能洞察**：程序化异常检测 + 大模型归因，对生成内容做数字回溯校验，
-   脚本 `insight/ai_insight.py`，报告 `docs/第3周_AI经营分析摘要.docx`
-5. **Git 协同**：走通 Fork → Pull Request → Code Review → 合并冲突解决 的完整流程
+## Project structure
+
+```
+.
+├── sql/
+│   ├── ods/            # create and load raw tables
+│   ├── clean/          # enum mapping, dimensions, quality comparison
+│   ├── dwd/            # fact tables and EDA
+│   ├── dws/            # daily / monthly aggregates
+│   ├── ads/            # KPI and top-N application tables
+│   └── mysql/          # generated BI-mart init script
+├── sync/               # Hive to MySQL mart synchronisation
+├── analysis/           # time-series diagnosis and forecasting
+├── nl2sql/             # schema loader, prompts, guard, CLI, test suite
+├── insight/            # AI anomaly attribution and report generation
+├── superset/           # image, config, dataset and chart bootstrap scripts
+├── web/                # Flask API and ECharts big screen
+├── app/                # Streamlit NL2SQL application
+├── bench/              # concurrent stress test
+├── tools/              # consistency workbook, CDP screenshot helpers
+├── scripts/            # rebuild_end2end.ps1 and friends
+└── docs/               # reports (zh-CN), screenshots, KPI workbook
+```
+
+---
+
+## Documentation (Chinese)
+
+| Document | Content |
+|---|---|
+| `docs/需求文档.docx` | Business background, requirements, KPI definitions |
+| `docs/数据质量对比报告.docx` | Five quality dimensions, 16 metrics, repair rates |
+| `docs/数仓架构设计文档.docx` | Four-layer design, star schema, technology choices |
+| `docs/预测建模分析报告.docx` | ACF diagnosis, model comparison, 7-day forecast, limits |
+| `docs/第3周_AI经营分析摘要.docx` | AI attribution with a verification log |
+| `docs/第3周_AI应用反思.docx` | Three real failures, AI limits, improvements |
+| `docs/第4周_部署手册.docx` | Deployment steps, troubleshooting, demo script |
+| `docs/第4周_API配置指南.docx` | Secret management, rotation, least privilege |
+| `docs/第4周_查询优化记录.docx` | Partition pruning evidence (−92.3% rows scanned) |
+| `docs/第4周_压测记录.docx` | Concurrency results at 10 / 20 / 50 |
+| `docs/第5周_数据一致性核对表.xlsx` | 23-table row counts, KPI reconciliation |
+
+---
+
+## Verification
+
+```bash
+# row counts across 23 tables (≈20 s)
+powershell -ExecutionPolicy Bypass -File scripts/rebuild_end2end.ps1 -VerifyOnly
+
+# NL2SQL accuracy on 10 questions
+.\.venv\Scripts\python.exe -m nl2sql.tests
+
+# concurrency test
+.\.venv\Scripts\python.exe bench\stress_test.py
+```
+
+---
+
+## Known limitations
+
+- The dataset is synthetic and uniformly distributed, so the repurchase rate saturates at 100% and daily GMV behaves close to white noise. Both facts are documented rather than hidden.
+- `fact_order_item` sums to roughly 14× the order GMV because the detail table carries pre-discount prices; the two calibres are never mixed in reports.
+- Superset connects to the MySQL mart rather than Hive directly (see the architecture note).
+- The Streamlit container mounts the Docker socket so it can call `beeline`; production deployments should use a JDBC connection pool instead.
+
+---
+
+## Team
+
+**Cloud Warehouse No.5** — Liu Yixuan (data engineering & analytics), Zhang Yebin, Yan Hongwei, Chai Chuanxing, Deng Kechao.
+
+## License
+
+Released for coursework and portfolio purposes. The synthetic dataset contains no real customer information.
