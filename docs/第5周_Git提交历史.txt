@@ -1,0 +1,80 @@
+﻿云仓五号 · Git 提交历史（截至 2026-11-23）
+仓库：github.com/liuwu-123/hive-project
+
+一、提交总数
+  总提交: 52
+  合并提交: 5
+  标签: v1.0-week3
+
+二、分支与合并图
+* 6bf1256 (HEAD -> main, origin/main, origin/HEAD) docs(week5): 答辩 PPT（10 页，含架构/指标/模型/NL2SQL/可视化/部署/复盘）
+*   b2ce092 Merge pull request #6 from liuwu-123/feature/docs-week5
+|\  
+| * 93aaee1 (origin/feature/docs-week5) docs(week5): 新增需求文档（背景/功能/指标/验收/边界），架构文档补 AI 层、可视化层、部署架构与技术取舍
+* |   2736219 Merge pull request #5 from liuwu-123/feature/readme-en
+|\ \  
+| |/  
+|/|   
+| * a7d33dc (origin/feature/readme-en) docs(readme): 重写英文 README（架构/特性/快速开始/局限），中文版迁至 README.zh-CN.md 并更新至第5周
+|/  
+* 4b26261 feat(week5): 端到端一键重建脚本（CSV→ODS→DWD→DWS→ADS→MySQL，3.2 分钟）+ 数据一致性核对表
+* df47232 docs(week4): 补充三张界面截图与 CDP 截图工具；app 镜像内置 docker CLI
+* 97553d3 feat(week4): 查询优化记录、压测脚本与记录、部署手册、API 配置指南
+* f3df379 feat(week4): MySQL BI 集市同步、Superset 仪表板、ECharts 大屏、Streamlit 问答、Compose 编排
+* 7d82748 docs: 第3周 Git 协同记录（Fork/PR/两轮Review/冲突解决/Release/Issue）
+*   4a31e9d (tag: v1.0-week3) Merge pull request #1 from YeHWeh1/feature/readme-week3
+|\  
+| *   8cdd9fd fix: 按 review 意见细化第3周计划并解决 README 合并冲突
+| |\  
+| * | c71477b docs: 按 review 意见细化第3周计划为 5 条并补末尾换行
+| * | a1205b7 (pr-test) docs: 补充第3周计划
+* | | 1613030 docs: 新增第3周指标定义文档（统一 8 个 KPI 口径 + 2 个口径问题说明）
+| |/  
+|/|   
+* | d743837 docs: 补充第3周计划（主分支）
+* | dfd46a0 feat(insight): AI 经营洞察与自动报告（异常检测+归因+验证记录），附 AI 应用反思
+* | 1796004 feat(nl2sql): 新增自然语言查询接口（Schema 抽取 + Prompt + 校验 + 执行），10/10 测试通过
+* | 968e16c feat(forecast): 新增 GMV 时间序列预测（线性/随机森林对比+7天预测）与分析报告
+* | ad98a8f feat(dws,ads): 新增 DWS 汇总层与 ADS 应用层（KPI/日报/品类门店排行/用户分层）
+|/  
+* 82b1fa7 chore: .gitignore 增加 .venv/，防止 Python 虚拟环境入库
+* d0bf298 docs: 架构图嵌入 docx；移除重复命名的第2周日志
+* 96835f2 feat(clean): dim_user 增加 region 字段（子任务3 字段合并）；docs 转 docx 并补齐日志命名
+* 787bcb1 docs: 新增第2周 AI 协同日志（9 条记录，含 2 条 AI 建议被否决）
+* 4bb9539 docs(sql): 修正脚本内 usage 注释的路径（sql/dwd -> sql/clean）
+* f95d0e9 fix(env): pid 文件改为写入 tmpfs，根治 hive-server 重启失败；补充笔记
+* 8ed8bd5 docs: 修正清洗脚本路径引用（sql/clean/）
+* 95844f6 refactor(sql): 清洗脚本迁至 sql/clean/，与任务书目录规范对齐
+* 3ca4ce6 docs: 第2周交付物（架构设计/清洗报告/分析简报/对比表/架构图）
+* da496e5 feat(eda): 探索性分析 SQL（子任务7：KPI/分布/窗口函数）
+* 0fb32cb feat(quality): 数据质量对比统计（子任务4：16 项修复率）
+* 308a164 feat(dwd): 星型模型事实表（子任务6：分区表与分桶表）
+* 577e8bf feat(dwd): 枚举映射表与维度表（子任务1-2：枚举标准化、格式统一）
+* 641a01e docs: 填写团队信息（云仓五号，5 人分工），日志按清单命名规范改名
+* 4a80611 docs(resume): 新增求职简历（docx/pdf/md + AI 协同日志）
+* 26da9ea docs: 新增 git 提交记录导出，作为版本管理证据随包提交
+* 2d16385 chore: .gitignore 忽略打包文件
+* fa24707 fix(scripts): 修正误报（大小写不敏感匹配）并过滤 beeline 无害噪音
+* 2f0bf27 fix(scripts): 就绪探测改用退出码判断，并打印每次探测进度
+* 7dfc832 docs: 新增 README 与第 1 周 AI 协同日志（团队信息待填）
+
+三、按周统计
+  feat(week5)        1 次
+  feat(week4)        2 次
+  docs(week5)        3 次
+  docs(week4)        1 次
+  feat(dwd           2 次
+  feat(eda           1 次
+  feat(quality       2 次
+  feat(dws           1 次
+  feat(nl2sql        1 次
+  feat(insight       1 次
+  feat(forecast      1 次
+
+四、PR / Issue 记录
+  PR #1  docs: 补充第3周计划（Fork/Review/冲突解决）
+  PR #5  docs: 重写英文 README 并迁移中文版
+  PR #6  docs(week5): 需求文档 + 架构文档终版
+  Issue #2 [增强] NL2SQL 支持多轮上下文追问
+  Issue #3 [数据] 核对品类销售额与订单 GMV 的 14.21 倍口径差异
+  Issue #4 [文档] 第4周接入 Superset + ECharts 可视化看板
