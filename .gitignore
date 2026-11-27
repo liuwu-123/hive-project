@@ -11,3 +11,5 @@ node_modules/
 # 提交打包文件
 *.zip
 .venv/
+# docker CLI 静态二进制（38MB，用 tools/fetch_docker_cli.ps1 下载）
+app/bin/

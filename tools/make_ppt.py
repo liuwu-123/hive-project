@@ -11,7 +11,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.util import Inches, Pt, Emu
 
-OUT = r"E:\hive-project\docs\第5周_答辩PPT.pptx"
+OUT = r"E:\hive-project\docs\第5周_答辩PPT_修订版.pptx"
 SHOTS = r"E:\hive-project\docs\screenshots"
 
 NAVY = RGBColor(0x0B, 0x1F, 0x3A)
@@ -167,7 +167,7 @@ header(s, "项目全景：一条数据链路，五个交付层次", "原始 CSV 
 steps = [
     ("原始数据", "6 个 CSV\n114,809 行", CYAN),
     ("ODS", "贴源入库\n行数校验", BLUE),
-    ("DWD", "清洗 + 星型模型\n7 维表 3 事实表", BLUE),
+    ("DWD", "清洗 + 星型模型\n4 维表 3 事实表", BLUE),
     ("DWS / ADS", "汇总 + 指标\n10 张表", BLUE),
     ("分析与 AI", "预测 / NL2SQL\nAI 洞察", ORANGE),
     ("可视化", "Superset\n大屏 / 问答", RGBColor(0x2E, 0x8B, 0x57)),
@@ -206,7 +206,7 @@ for i, (title, desc, color) in enumerate(steps):
         arrow.line.fill.background()
 
 card(s, Inches(0.55), Inches(3.85), Inches(2.9), Inches(1.15), "数据规模", "11.5 万行", "6 张业务表 / 366 天")
-card(s, Inches(3.62), Inches(3.85), Inches(2.9), Inches(1.15), "数仓对象", "23 张表", "ODS6 + DWD7 + DWS5 + ADS5")
+card(s, Inches(3.62), Inches(3.85), Inches(2.9), Inches(1.15), "数仓对象", "核心 23 张", "四层共 41 张（含映射表与遗留表）")
 card(s, Inches(6.69), Inches(3.85), Inches(2.9), Inches(1.15), "NL2SQL", "10/10", "测试集全通过，均 5.95 秒")
 card(s, Inches(9.76), Inches(3.85), Inches(3.0), Inches(1.15), "端到端重建", "3.2 分钟", "CSV → BI 可用", ORANGE)
 

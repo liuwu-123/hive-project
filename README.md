@@ -13,7 +13,7 @@ An end-to-end data platform for a fictional new-retail company: from raw CSV ing
 |---|---|
 | Raw data ingested | **114,809 rows** across 6 business tables |
 | Data quality issues fixed | **16 metrics, 14 at 100% repair rate** |
-| Warehouse layers | ODS → DWD → DWS → ADS (7 dimension + 3 fact tables) |
+| Warehouse layers | ODS → DWD → DWS → ADS (4 business dims + 7 enum dims + 3 fact tables) |
 | Core KPI | GMV **¥36,116,687.06**, 14,398 orders, AOV **¥2,508.45** |
 | NL2SQL accuracy | **10/10** test questions, ~5.9 s average end-to-end |
 | End-to-end rebuild | **3.2 minutes** from CSV to a BI-ready MySQL mart |
@@ -27,7 +27,7 @@ An end-to-end data platform for a fictional new-retail company: from raw CSV ing
 ┌─────────────┐   ┌──────────────┐   ┌─────────────┐   ┌──────────────┐
 │     ODS     │──▶│     DWD      │──▶│     DWS     │──▶│     ADS      │
 │ raw import  │   │ clean + star │   │ aggregated  │   │ KPI / top-N  │
-│  6 tables   │   │ 7 dim + 3 fact│  │  5 tables   │   │  5 tables    │
+│  6 tables   │   │4 dim+3 fact  │  │  5 tables   │   │  5 tables    │
 └─────────────┘   └──────────────┘   └─────────────┘   └──────┬───────┘
                                                               │ sync
         ┌─────────────────────────────────────────────────────┘
